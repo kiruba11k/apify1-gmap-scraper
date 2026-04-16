@@ -1,0 +1,18 @@
+{
+  "name": "google-maps-company-scraper",
+  "version": "1.0.0",
+  "description": "Scrapes company data from Google Maps",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "apify": "^3.2.2",
+    "crawlee": "^3.10.5",
+    "playwright": "^1.42.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
