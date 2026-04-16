@@ -1,9 +1,9 @@
 {
+    "actorSpecification": 1,
     "name": "google-maps-company-scraper",
     "title": "Google Maps Company Scraper",
-    "description": "Extracts structured company data from Google Maps with enrichment via Google Search. Outputs: company name, industry, region, address, services, domain, phone, email, employee size, LinkedIn URL.",
+    "description": "Extracts structured company data from Google Maps with enrichment via Google Search.",
     "version": "1.0",
-    "buildTag": "latest",
     "dockerfile": "./Dockerfile",
-    "input": "./INPUT_SCHEMA.json"
+    "input": "./input_schema.json"
 }
