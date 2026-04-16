@@ -1,0 +1,60 @@
+{
+    "title": "Google Maps Company Scraper",
+    "description": "Scrapes company data from Google Maps.",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "searchQuery": {
+            "title": "Search Query (Optional)",
+            "type": "string",
+            "description": "Main keyword to search for. If empty, the actor builds the query from Industry Filter + Location.",
+            "editor": "textfield",
+            "example": "IT services companies with 500+ employees in Bangalore"
+        },
+        "location": {
+            "title": "Location",
+            "type": "string",
+            "description": "Geographic area to focus the search on.",
+            "editor": "textfield",
+            "default": "Bangalore, India",
+            "example": "Bangalore, India"
+        },
+        "industryFilter": {
+            "title": "Industry Filter",
+            "type": "string",
+            "description": "Restrict results to a specific industry. Used both to build the search query and to filter results by category.",
+            "editor": "textfield",
+            "example": "IT Services / Software"
+        },
+        "minEmployees": {
+            "title": "Minimum Employee Size",
+            "type": "integer",
+            "description": "Filter out companies with fewer employees than this. Set to 0 to disable.",
+            "default": 0,
+            "minimum": 0,
+            "example": 500
+        },
+        "maxEmployees": {
+            "title": "Maximum Employee Size (Optional)",
+            "type": "integer",
+            "description": "Filter out companies with more employees than this. Leave empty for no upper limit.",
+            "example": 5000
+        },
+        "numResults": {
+            "title": "Number of Results Required",
+            "type": "integer",
+            "description": "How many companies to extract. Maximum is 500.",
+            "default": 50,
+            "minimum": 1,
+            "maximum": 500,
+            "example": 50
+        },
+        "useProxy": {
+            "title": "Use Apify Proxy",
+            "type": "boolean",
+            "description": "Highly recommended for large runs to avoid rate limiting.",
+            "default": true
+        }
+    },
+    "required": ["location", "numResults"]
+}
