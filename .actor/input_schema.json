@@ -1,35 +1,35 @@
 {
     "title": "Google Maps Company Scraper",
-    "description": "Scrapes company data from Google Maps.",
+    "description": "Scrapes company data from Google Maps. The actor automatically builds a natural-language query like 'AI companies in Bangalore with 500 to 1000 employees' from your inputs.",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
         "searchQuery": {
-            "title": "Search Query (Optional)",
+            "title": "Custom Search Query (Optional)",
             "type": "string",
-            "description": "Main keyword to search for. If empty, the actor builds the query from Industry Filter + Location.",
+            "description": "Override the auto-built query with your own text. If left empty, the actor builds the query from Industry Filter + Location + Employee range (e.g. 'AI companies in Bangalore with 500 to 1000 employees').",
             "editor": "textfield",
-            "example": "IT services companies with 500+ employees in Bangalore"
+            "example": "IT services companies in Bangalore"
         },
         "location": {
             "title": "Location",
             "type": "string",
-            "description": "Geographic area to focus the search on.",
+            "description": "Geographic area to focus the search on. Used in the auto-built query.",
             "editor": "textfield",
             "default": "Bangalore, India",
             "example": "Bangalore, India"
         },
         "industryFilter": {
-            "title": "Industry Filter",
+            "title": "Industry / Company Type",
             "type": "string",
-            "description": "Restrict results to a specific industry. Used both to build the search query and to filter results by category.",
+            "description": "Type of companies to search for. Used to build the query (e.g. 'AI' → 'AI companies in Bangalore...').",
             "editor": "textfield",
-            "example": "IT Services / Software"
+            "example": "AI"
         },
         "minEmployees": {
             "title": "Minimum Employee Size",
             "type": "integer",
-            "description": "Filter out companies with fewer employees than this. Set to 0 to disable.",
+            "description": "Appended to the search query as 'with N+ employees' or 'with N to M employees'. Set to 0 to omit.",
             "default": 0,
             "minimum": 0,
             "example": 500
@@ -37,11 +37,11 @@
         "maxEmployees": {
             "title": "Maximum Employee Size (Optional)",
             "type": "integer",
-            "description": "Filter out companies with more employees than this. Leave empty for no upper limit.",
-            "example": 5000
+            "description": "Combined with Minimum to produce 'with 500 to 1000 employees' in the query. Leave empty for no upper bound.",
+            "example": 1000
         },
         "numResults": {
-            "title": "Number of Results Required",
+            "title": "Number of Results",
             "type": "integer",
             "description": "How many companies to extract. Maximum is 500.",
             "default": 50,
@@ -52,7 +52,7 @@
         "useProxy": {
             "title": "Use Apify Proxy",
             "type": "boolean",
-            "description": "Highly recommended for large runs to avoid rate limiting.",
+            "description": "Strongly recommended for avoiding rate limits on large runs.",
             "default": true
         }
     },
