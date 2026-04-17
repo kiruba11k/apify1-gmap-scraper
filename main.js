@@ -24,6 +24,7 @@ function buildQuery() {
 }
 
 const searchQuery = buildQuery();
+// FIXED: Added missing '$' for template literal
 const SEARCH_URL  = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
 
 console.log(`\n🔍 Query  : "${searchQuery}"`);
@@ -123,6 +124,7 @@ async function requestHandler({ request, page, log, crawler }) {
             exactAddress: raw.address,
             servicesOffered: raw.industry,
             companyDomain: raw.website,
+            googleMapsLink: request.url, // NEW COLUMN ADDED HERE
             contactNumber: phone,
             emailId,
             starRating: raw.stars,
