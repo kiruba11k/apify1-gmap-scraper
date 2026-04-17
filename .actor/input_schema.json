@@ -1,41 +1,41 @@
 {
     "title": "Google Maps Company Scraper",
-    "description": "Scrapes company data from Google Maps. The actor automatically builds a natural-language query like 'AI companies in Bangalore with 500 to 1000 employees' from your inputs.",
+    "description": "Scrapes company data from Google Maps. Builds a natural-language query like 'AI Companies in Bangalore, India with 500 to 1000 employees' from your inputs.",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
         "searchQuery": {
-            "title": "Custom Search Query (Optional)",
+            "title": "Search Query",
             "type": "string",
-            "description": "Override the auto-built query with your own text. If left empty, the actor builds the query from Industry Filter + Location + Employee range (e.g. 'AI companies in Bangalore with 500 to 1000 employees').",
+            "description": "Main keyword(s) to search for (e.g. 'AI Companies'). The actor will automatically append location and employee range. Leave empty to build the query fully from Industry Filter + Location.",
             "editor": "textfield",
-            "example": "IT services companies in Bangalore"
+            "example": "AI Companies"
         },
         "location": {
             "title": "Location",
             "type": "string",
-            "description": "Geographic area to focus the search on. Used in the auto-built query.",
+            "description": "The city or region to search within. Automatically appended to the query.",
             "editor": "textfield",
             "default": "Bangalore, India",
             "example": "Bangalore, India"
         },
         "industryFilter": {
-            "title": "Industry / Company Type",
+            "title": "Industry Filter (used if Search Query is empty)",
             "type": "string",
-            "description": "Type of companies to search for. Used to build the query (e.g. 'AI' → 'AI companies in Bangalore...').",
+            "description": "Used to auto-build the query when Search Query is empty. E.g. 'IT Services' → 'IT Services companies in Bangalore...'",
             "editor": "textfield",
-            "example": "AI"
+            "example": "IT Services"
         },
         "minEmployees": {
-            "title": "Minimum Employee Size",
+            "title": "Minimum Employees",
             "type": "integer",
-            "description": "Appended to the search query as 'with N+ employees' or 'with N to M employees'. Set to 0 to omit.",
+            "description": "Appended to the query as 'with N to M employees' or 'with N+ employees'. Set to 0 to omit.",
             "default": 0,
             "minimum": 0,
             "example": 500
         },
         "maxEmployees": {
-            "title": "Maximum Employee Size (Optional)",
+            "title": "Maximum Employees (optional)",
             "type": "integer",
             "description": "Combined with Minimum to produce 'with 500 to 1000 employees' in the query. Leave empty for no upper bound.",
             "example": 1000
@@ -43,16 +43,16 @@
         "numResults": {
             "title": "Number of Results",
             "type": "integer",
-            "description": "How many companies to extract. Maximum is 500.",
+            "description": "How many companies to extract. Maximum 500.",
             "default": 50,
             "minimum": 1,
             "maximum": 500,
-            "example": 50
+            "example": 20
         },
         "useProxy": {
             "title": "Use Apify Proxy",
             "type": "boolean",
-            "description": "Strongly recommended for avoiding rate limits on large runs.",
+            "description": "Strongly recommended for large runs to avoid rate limits.",
             "default": true
         }
     },
