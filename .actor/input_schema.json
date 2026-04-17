@@ -52,7 +52,7 @@
         "useProxy": {
             "title": "Use Apify Proxy",
             "type": "boolean",
-            "description": "Strongly recommended for large runs to avoid rate limits.",
+            "description": "Strongly recommended for large runs to avoid rate limits and bot detection.",
             "default": true
         }
     },
