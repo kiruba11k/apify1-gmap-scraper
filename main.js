@@ -254,7 +254,7 @@ const crawler = new PlaywrightCrawler({
             }
         }
 
-        log.info(`\n Done! Total companies extracted: ${totalSaved}`);
+        log.info(`\n✅ Done! Total companies extracted: ${totalSaved}`);
     },
 });
 
