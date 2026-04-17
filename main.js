@@ -113,39 +113,6 @@ async function requestHandler({ request, page, log, crawler }) {
 
         if (BAD_NAMES.has(raw.name)) return;
 
-        // ── LINKEDIN EXTRACTION ──────────────────────────────────────────────
-        let linkedinUrl = 'N/A';
-        try {
-            // Scroll the details pane multiple times to trigger "Web results" lazy load
-            await page.evaluate(async () => {
-                const scrollable = document.querySelector('div[role="main"]') || document.querySelector('.m6QErb.Wp6uUe');
-                if (scrollable) {
-                    scrollable.scrollTop = scrollable.scrollHeight;
-                    await new Promise(r => setTimeout(r, 800));
-                    scrollable.scrollTop = scrollable.scrollHeight;
-                }
-            });
-            
-            await page.waitForTimeout(1000);
-
-            linkedinUrl = await page.evaluate(() => {
-                // Find any link that contains linkedin.com
-                const links = Array.from(document.querySelectorAll('a[href*="linkedin.com"]'));
-                if (links.length > 0) {
-                    // Try to get the clean URL if it's wrapped in a Google redirect
-                    const href = links[0].href;
-                    if (href.includes('google.com/url?')) {
-                        const urlParams = new URLSearchParams(new URL(href).search);
-                        return urlParams.get('url') || urlParams.get('q') || href;
-                    }
-                    return href;
-                }
-                return 'N/A';
-            });
-        } catch (e) {
-            log.debug(`LinkedIn scroll failed for ${raw.name}`);
-        }
-
         const phone = raw.phone || phoneFromText(await page.evaluate(() => document.body.innerText)) || 'N/A';
         const emailId = emailFromDomain(raw.website);
 
@@ -160,12 +127,11 @@ async function requestHandler({ request, page, log, crawler }) {
             emailId,
             starRating: raw.stars,
             reviewCount: raw.reviews,
-            linkedinUrl,
             totalCompaniesFound: ++totalSaved,
         };
 
         await Actor.pushData(record);
-        log.info(`✔ [${totalSaved}] Saved: ${raw.name} | LinkedIn: ${linkedinUrl !== 'N/A' ? 'Found' : 'Not Found'}`);
+        log.info(`✔ [${totalSaved}] Saved: ${raw.name}`);
     }
 }
 
