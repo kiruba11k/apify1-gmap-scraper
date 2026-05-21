@@ -1,64 +1,69 @@
 {
   "actorKeyValueStoreSchemaVersion": 1,
-  "actorSpecification": 1,
   "title": "Google Maps Company Scraper Key Value Store Schema",
   "description": "Schema for storing metadata, logs, and execution summaries for the Apify actor.",
-  "properties": {
-    "runInfo": {
+  "type": "object",
+  "collections": {
+    "records": {
       "type": "object",
-      "title": "Run Information",
       "properties": {
-        "startedAt": {
-          "type": "string",
-          "format": "date-time"
+        "runInfo": {
+          "type": "object",
+          "title": "Run Information",
+          "properties": {
+            "startedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "finishedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "status": {
+              "type": "string"
+            },
+            "totalCompaniesFound": {
+              "type": "integer"
+            }
+          }
         },
-        "finishedAt": {
-          "type": "string",
-          "format": "date-time"
+        "searchMetadata": {
+          "type": "object",
+          "title": "Search Metadata",
+          "properties": {
+            "searchQuery": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "maxResults": {
+              "type": "integer"
+            }
+          }
         },
-        "status": {
-          "type": "string"
+        "statistics": {
+          "type": "object",
+          "title": "Execution Statistics",
+          "properties": {
+            "processedCompanies": {
+              "type": "integer"
+            },
+            "successfulExtractions": {
+              "type": "integer"
+            },
+            "failedExtractions": {
+              "type": "integer"
+            }
+          }
         },
-        "totalCompaniesFound": {
-          "type": "integer"
+        "logs": {
+          "type": "array",
+          "title": "Execution Logs",
+          "items": {
+            "type": "string"
+          }
         }
-      }
-    },
-    "searchMetadata": {
-      "type": "object",
-      "title": "Search Metadata",
-      "properties": {
-        "searchQuery": {
-          "type": "string"
-        },
-        "location": {
-          "type": "string"
-        },
-        "maxResults": {
-          "type": "integer"
-        }
-      }
-    },
-    "statistics": {
-      "type": "object",
-      "title": "Execution Statistics",
-      "properties": {
-        "processedCompanies": {
-          "type": "integer"
-        },
-        "successfulExtractions": {
-          "type": "integer"
-        },
-        "failedExtractions": {
-          "type": "integer"
-        }
-      }
-    },
-    "logs": {
-      "type": "array",
-      "title": "Execution Logs",
-      "items": {
-        "type": "string"
       }
     }
   }
