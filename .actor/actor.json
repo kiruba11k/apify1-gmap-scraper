@@ -14,7 +14,6 @@
         "keyValueStore": "./key_value_store_schema.json"
     },
 
-    "webServer": {
-        "openApiSchema": "./openapi.json"
-    }
+    "usesStandbyMode": true,
+    "webServerSchema": "./openapi.json"
 }
