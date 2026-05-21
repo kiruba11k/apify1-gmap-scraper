@@ -1,69 +1,72 @@
 {
   "actorOutputSchemaVersion": 1,
   "title": "Google Maps Company Scraper Output",
-  "type": "object",
-  "properties": {
-    "companyDomain": {
-      "type": "string",
-      "description": "Official company website URL"
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "companyDomain": {
+        "type": "string",
+        "description": "Official company website URL"
+      },
+      "companyIndustry": {
+        "type": "string",
+        "description": "Industry or business category"
+      },
+      "companyName": {
+        "type": "string",
+        "description": "Registered or displayed company name"
+      },
+      "contactNumber": {
+        "type": "string",
+        "description": "Primary contact phone number"
+      },
+      "emailId": {
+        "type": "string",
+        "description": "Company email address"
+      },
+      "exactAddress": {
+        "type": "string",
+        "description": "Complete company address"
+      },
+      "googleMapsLink": {
+        "type": "string",
+        "description": "Google Maps business profile link"
+      },
+      "locationRegion": {
+        "type": "string",
+        "description": "City, state, or regional location"
+      },
+      "reviewCount": {
+        "type": "integer",
+        "description": "Total number of Google reviews"
+      },
+      "servicesOffered": {
+        "type": "string",
+        "description": "Main services or business offerings"
+      },
+      "starRating": {
+        "type": "number",
+        "description": "Google rating score"
+      },
+      "totalCompaniesFound": {
+        "type": "integer",
+        "description": "Total companies scraped in the run"
+      }
     },
-    "companyIndustry": {
-      "type": "string",
-      "description": "Industry or business category"
-    },
-    "companyName": {
-      "type": "string",
-      "description": "Registered or displayed company name"
-    },
-    "contactNumber": {
-      "type": "string",
-      "description": "Primary contact phone number"
-    },
-    "emailId": {
-      "type": "string",
-      "description": "Company email address"
-    },
-    "exactAddress": {
-      "type": "string",
-      "description": "Complete company address"
-    },
-    "googleMapsLink": {
-      "type": "string",
-      "description": "Google Maps business profile link"
-    },
-    "locationRegion": {
-      "type": "string",
-      "description": "City, state, or regional location"
-    },
-    "reviewCount": {
-      "type": "integer",
-      "description": "Total number of Google reviews"
-    },
-    "servicesOffered": {
-      "type": "string",
-      "description": "Main services or business offerings"
-    },
-    "starRating": {
-      "type": "number",
-      "description": "Google rating score"
-    },
-    "totalCompaniesFound": {
-      "type": "integer",
-      "description": "Total companies scraped in the run"
-    }
-  },
-  "required": [
-    "companyDomain",
-    "companyIndustry",
-    "companyName",
-    "contactNumber",
-    "emailId",
-    "exactAddress",
-    "googleMapsLink",
-    "locationRegion",
-    "reviewCount",
-    "servicesOffered",
-    "starRating",
-    "totalCompaniesFound"
-  ]
+    "required": [
+      "companyDomain",
+      "companyIndustry",
+      "companyName",
+      "contactNumber",
+      "emailId",
+      "exactAddress",
+      "googleMapsLink",
+      "locationRegion",
+      "reviewCount",
+      "servicesOffered",
+      "starRating",
+      "totalCompaniesFound"
+    ]
+  }
 }
