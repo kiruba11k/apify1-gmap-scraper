@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Google Maps Company Leads API",
+    "title": "Google Maps Company Scraper API",
     "description": "Web server API for accessing scraped Google Maps company lead data from the actor.",
     "version": "1.0.0"
   },
