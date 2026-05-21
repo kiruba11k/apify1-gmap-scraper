@@ -5,5 +5,13 @@
     "description": "Extracts structured company data from Google Maps with enrichment via Google Search.",
     "version": "1.0",
     "dockerfile": "./Dockerfile",
-    "input": "./input_schema.json"
+    "input": "./input_schema.json",
+    "output": "./output_schema.json",
+    "storages": {
+        "dataset": "./dataset_schema.json",
+        "keyValueStore": "./key_value_store_schema.json"
+    },
+    "webServer": {
+        "openApiSchema": "./openapi.json"
+    }
 }
