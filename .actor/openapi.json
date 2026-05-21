@@ -1,0 +1,131 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Google Maps Company Leads API",
+    "description": "API schema for accessing scraped company lead data from the Apify actor.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.apify.com/v2"
+    }
+  ],
+  "paths": {
+    "/datasets/{datasetId}/items": {
+      "get": {
+        "summary": "Get scraped company leads",
+        "description": "Returns scraped company lead records from the dataset.",
+        "parameters": [
+          {
+            "name": "datasetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Apify dataset ID"
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["json", "csv", "xlsx"]
+            },
+            "description": "Response export format"
+          },
+          {
+            "name": "clean",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Remove hidden/internal fields"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response with company lead records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompanyLead"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CompanyLead": {
+        "type": "object",
+        "properties": {
+          "companyDomain": {
+            "type": "string",
+            "example": "https://business-software.in/"
+          },
+          "companyIndustry": {
+            "type": "string",
+            "example": "Software company"
+          },
+          "companyName": {
+            "type": "string",
+            "example": "Business Software India I Leading Artificial Intelligent and Blockchain Company"
+          },
+          "contactNumber": {
+            "type": "string",
+            "example": "+91 97331 92532"
+          },
+          "emailId": {
+            "type": "string",
+            "example": "info@business-software.in"
+          },
+          "exactAddress": {
+            "type": "string",
+            "example": "91Springboard, 6th Floor, Trifecta Adatto, 21, ITPL Main Rd, Bengaluru, Karnataka 560048, India"
+          },
+          "googleMapsLink": {
+            "type": "string",
+            "example": "https://www.google.com/maps/place/Business+Software+India"
+          },
+          "locationRegion": {
+            "type": "string",
+            "example": "Bangalore, India"
+          },
+          "reviewCount": {
+            "type": "integer",
+            "example": 5
+          },
+          "servicesOffered": {
+            "type": "string",
+            "example": "Software company"
+          },
+          "starRating": {
+            "type": "number",
+            "format": "float",
+            "example": 5.0
+          },
+          "totalCompaniesFound": {
+            "type": "integer",
+            "example": 1
+          }
+        },
+        "required": [
+          "companyName",
+          "companyIndustry",
+          "contactNumber",
+          "exactAddress",
+          "googleMapsLink"
+        ]
+      }
+    }
+  }
+}
