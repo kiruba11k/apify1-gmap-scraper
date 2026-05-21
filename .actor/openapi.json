@@ -2,27 +2,41 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Google Maps Company Leads API",
-    "version": "1.0.0",
-    "description": "API for accessing scraped Google Maps company leads."
+    "description": "Web server API for accessing scraped Google Maps company lead data from the actor.",
+    "version": "1.0.0"
   },
   "paths": {
-    "/datasets/{datasetId}/items": {
+    "/health": {
       "get": {
-        "summary": "Get company leads",
-        "operationId": "getCompanyLeads",
-        "parameters": [
-          {
-            "name": "datasetId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "operationId": "healthCheck",
+        "summary": "Health check endpoint",
         "responses": {
           "200": {
-            "description": "List of company leads",
+            "description": "Server is running",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/companies": {
+      "get": {
+        "operationId": "getCompanies",
+        "summary": "Get scraped company leads",
+        "description": "Returns scraped company lead records.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
             "content": {
               "application/json": {
                 "schema": {
