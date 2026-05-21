@@ -1,4 +1,5 @@
 {
+  "actorOutputSchemaVersion": 1,
   "title": "Google Maps Company Scraper Output",
   "type": "object",
   "properties": {
