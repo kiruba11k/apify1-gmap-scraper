@@ -43,7 +43,7 @@
       "template": "{{locationRegion}}"
     },
     "reviewCount": {
-      "type": "integer",
+      "type": "string",
       "title": "Review Count",
       "template": "{{reviewCount}}"
     },
@@ -53,12 +53,12 @@
       "template": "{{servicesOffered}}"
     },
     "starRating": {
-      "type": "number",
+      "type": "string",
       "title": "Star Rating",
       "template": "{{starRating}}"
     },
     "totalCompaniesFound": {
-      "type": "integer",
+      "type": "string",
       "title": "Total Companies Found",
       "template": "{{totalCompaniesFound}}"
     }
