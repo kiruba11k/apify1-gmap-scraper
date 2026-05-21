@@ -1,0 +1,79 @@
+{
+  "actorSpecification": 1,
+  "name": "dataset_schema",
+  "title": "Google Maps Company Scraper Dataset Schema",
+  "views": {
+    "overview": {
+      "title": "Overview",
+      "transformation": {
+        "fields": [
+          "companyName",
+          "companyIndustry",
+          "servicesOffered",
+          "contactNumber",
+          "emailId",
+          "companyDomain",
+          "locationRegion",
+          "exactAddress",
+          "starRating",
+          "reviewCount",
+          "googleMapsLink",
+          "totalCompaniesFound"
+        ]
+      },
+      "display": {
+        "component": "table"
+      }
+    }
+  },
+  "fields": {
+    "companyDomain": {
+      "type": "string",
+      "title": "Company Domain"
+    },
+    "companyIndustry": {
+      "type": "string",
+      "title": "Industry"
+    },
+    "companyName": {
+      "type": "string",
+      "title": "Company Name"
+    },
+    "contactNumber": {
+      "type": "string",
+      "title": "Contact Number"
+    },
+    "emailId": {
+      "type": "string",
+      "title": "Email ID"
+    },
+    "exactAddress": {
+      "type": "string",
+      "title": "Exact Address"
+    },
+    "googleMapsLink": {
+      "type": "string",
+      "title": "Google Maps Link"
+    },
+    "locationRegion": {
+      "type": "string",
+      "title": "Location Region"
+    },
+    "reviewCount": {
+      "type": "integer",
+      "title": "Review Count"
+    },
+    "servicesOffered": {
+      "type": "string",
+      "title": "Services Offered"
+    },
+    "starRating": {
+      "type": "number",
+      "title": "Star Rating"
+    },
+    "totalCompaniesFound": {
+      "type": "integer",
+      "title": "Total Companies Found"
+    }
+  }
+}
