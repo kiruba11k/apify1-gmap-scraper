@@ -1,20 +1,56 @@
 {
-    "actorSpecification": 1,
-    "name": "google-maps-company-scraper",
-    "title": "Google Maps Company Scraper",
-    "description": "Extracts structured company data from Google Maps with enrichment via Google Search.",
-    "version": "1.0",
-    "dockerfile": "./Dockerfile",
-
-    "input": "./input_schema.json",
-    "output": "./output_schema.json",
-
-    "storages": {
-        "dataset": "./dataset_schema.json",
-        "keyValueStore": "./key_value_store_schema.json"
+  "actorOutputSchemaVersion": 1,
+  "title": "Google Maps Company Scraper Output",
+  "description": "Structured company lead data scraped from Google Maps",
+  "type": "object",
+  "properties": {
+    "companyDomain": {
+      "type": ["string", "null"],
+      "description": "Official company website URL"
     },
-
-    "webServer": {
-        "openApiSchema": "./openapi.json"
+    "companyIndustry": {
+      "type": ["string", "null"],
+      "description": "Industry or business category"
+    },
+    "companyName": {
+      "type": ["string", "null"],
+      "description": "Registered or displayed company name"
+    },
+    "contactNumber": {
+      "type": ["string", "null"],
+      "description": "Primary contact phone number"
+    },
+    "emailId": {
+      "type": ["string", "null"],
+      "description": "Company email address"
+    },
+    "exactAddress": {
+      "type": ["string", "null"],
+      "description": "Complete company address"
+    },
+    "googleMapsLink": {
+      "type": ["string", "null"],
+      "description": "Google Maps business profile link"
+    },
+    "locationRegion": {
+      "type": ["string", "null"],
+      "description": "City, state, or regional location"
+    },
+    "reviewCount": {
+      "type": ["integer", "null"],
+      "description": "Total number of Google reviews"
+    },
+    "servicesOffered": {
+      "type": ["string", "null"],
+      "description": "Main services or business offerings"
+    },
+    "starRating": {
+      "type": ["number", "null"],
+      "description": "Google rating score"
+    },
+    "totalCompaniesFound": {
+      "type": ["integer", "null"],
+      "description": "Total companies scraped in the run"
     }
+  }
 }
