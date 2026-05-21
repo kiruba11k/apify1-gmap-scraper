@@ -2,55 +2,27 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Google Maps Company Leads API",
-    "description": "API schema for accessing scraped company lead data from the Apify actor.",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "description": "API for accessing scraped Google Maps company leads."
   },
-  "servers": [
-    {
-      "url": "https://api.apify.com/v2"
-    }
-  ],
   "paths": {
     "/datasets/{datasetId}/items": {
       "get": {
+        "summary": "Get company leads",
         "operationId": "getCompanyLeads",
-        "summary": "Get scraped company leads",
-        "description": "Returns scraped company lead records from the dataset.",
         "parameters": [
           {
             "name": "datasetId",
             "in": "path",
             "required": true,
-            "description": "Apify dataset ID",
             "schema": {
               "type": "string"
-            }
-          },
-          {
-            "name": "format",
-            "in": "query",
-            "required": false,
-            "description": "Export format",
-            "schema": {
-              "type": "string",
-              "enum": ["json", "csv", "xlsx"],
-              "default": "json"
-            }
-          },
-          {
-            "name": "clean",
-            "in": "query",
-            "required": false,
-            "description": "Remove hidden/internal fields",
-            "schema": {
-              "type": "boolean",
-              "default": true
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful response with company lead records",
+            "description": "List of company leads",
             "content": {
               "application/json": {
                 "schema": {
@@ -72,65 +44,40 @@
         "type": "object",
         "properties": {
           "companyDomain": {
-            "type": "string",
-            "nullable": true,
-            "example": "https://business-software.in/"
+            "type": "string"
           },
           "companyIndustry": {
-            "type": "string",
-            "nullable": true,
-            "example": "Software company"
+            "type": "string"
           },
           "companyName": {
-            "type": "string",
-            "nullable": true,
-            "example": "Business Software India"
+            "type": "string"
           },
           "contactNumber": {
-            "type": "string",
-            "nullable": true,
-            "example": "+91 97331 92532"
+            "type": "string"
           },
           "emailId": {
-            "type": "string",
-            "nullable": true,
-            "example": "info@business-software.in"
+            "type": "string"
           },
           "exactAddress": {
-            "type": "string",
-            "nullable": true,
-            "example": "91Springboard, Bengaluru, Karnataka 560048, India"
+            "type": "string"
           },
           "googleMapsLink": {
-            "type": "string",
-            "nullable": true,
-            "example": "https://www.google.com/maps/place/Business+Software+India"
+            "type": "string"
           },
           "locationRegion": {
-            "type": "string",
-            "nullable": true,
-            "example": "Bangalore, India"
+            "type": "string"
           },
           "reviewCount": {
-            "type": "integer",
-            "nullable": true,
-            "example": 5
+            "type": "string"
           },
           "servicesOffered": {
-            "type": "string",
-            "nullable": true,
-            "example": "Software company"
+            "type": "string"
           },
           "starRating": {
-            "type": "number",
-            "format": "float",
-            "nullable": true,
-            "example": 5
+            "type": "string"
           },
           "totalCompaniesFound": {
-            "type": "integer",
-            "nullable": true,
-            "example": 1
+            "type": "string"
           }
         }
       }
