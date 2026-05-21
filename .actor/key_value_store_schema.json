@@ -5,63 +5,42 @@
   "type": "object",
   "collections": {
     "records": {
-      "type": "object",
-      "properties": {
-        "runInfo": {
-          "type": "object",
-          "title": "Run Information",
-          "properties": {
-            "startedAt": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "finishedAt": {
-              "type": "string",
-              "format": "date-time"
-            },
-            "status": {
-              "type": "string"
-            },
-            "totalCompaniesFound": {
-              "type": "integer"
+      "keyPrefix": "",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "runInfo": {
+            "type": "object",
+            "title": "Run Information",
+            "properties": {
+              "startedAt": { "type": "string", "format": "date-time" },
+              "finishedAt": { "type": "string", "format": "date-time" },
+              "status": { "type": "string" },
+              "totalCompaniesFound": { "type": "integer" }
             }
-          }
-        },
-        "searchMetadata": {
-          "type": "object",
-          "title": "Search Metadata",
-          "properties": {
-            "searchQuery": {
-              "type": "string"
-            },
-            "location": {
-              "type": "string"
-            },
-            "maxResults": {
-              "type": "integer"
+          },
+          "searchMetadata": {
+            "type": "object",
+            "title": "Search Metadata",
+            "properties": {
+              "searchQuery": { "type": "string" },
+              "location": { "type": "string" },
+              "maxResults": { "type": "integer" }
             }
-          }
-        },
-        "statistics": {
-          "type": "object",
-          "title": "Execution Statistics",
-          "properties": {
-            "processedCompanies": {
-              "type": "integer"
-            },
-            "successfulExtractions": {
-              "type": "integer"
-            },
-            "failedExtractions": {
-              "type": "integer"
+          },
+          "statistics": {
+            "type": "object",
+            "title": "Execution Statistics",
+            "properties": {
+              "processedCompanies": { "type": "integer" },
+              "successfulExtractions": { "type": "integer" },
+              "failedExtractions": { "type": "integer" }
             }
-          }
-        },
-        "logs": {
-          "type": "array",
-          "title": "Execution Logs",
-          "items": {
-            "type": "string"
+          },
+          "logs": {
+            "type": "array",
+            "title": "Execution Logs",
+            "items": { "type": "string" }
           }
         }
       }
