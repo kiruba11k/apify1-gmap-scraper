@@ -1,4 +1,5 @@
 {
+  "actorKeyValueStoreSchemaVersion": 1,
   "actorSpecification": 1,
   "title": "Google Maps Company Scraper Key Value Store Schema",
   "description": "Schema for storing metadata, logs, and execution summaries for the Apify actor.",
