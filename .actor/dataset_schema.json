@@ -1,5 +1,4 @@
 {
-  "actorDatasetSchemaVersion": 1,
   "title": "Google Maps Company Scraper Dataset Schema",
   "type": "object",
   "properties": {
