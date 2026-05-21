@@ -1,56 +1,66 @@
 {
   "actorOutputSchemaVersion": 1,
   "title": "Google Maps Company Scraper Output",
-  "description": "Structured company lead data scraped from Google Maps",
-  "type": "object",
   "properties": {
     "companyDomain": {
-      "type": ["string", "null"],
-      "description": "Official company website URL"
+      "type": "string",
+      "title": "Company Domain",
+      "template": "{{companyDomain}}"
     },
     "companyIndustry": {
-      "type": ["string", "null"],
-      "description": "Industry or business category"
+      "type": "string",
+      "title": "Company Industry",
+      "template": "{{companyIndustry}}"
     },
     "companyName": {
-      "type": ["string", "null"],
-      "description": "Registered or displayed company name"
+      "type": "string",
+      "title": "Company Name",
+      "template": "{{companyName}}"
     },
     "contactNumber": {
-      "type": ["string", "null"],
-      "description": "Primary contact phone number"
+      "type": "string",
+      "title": "Contact Number",
+      "template": "{{contactNumber}}"
     },
     "emailId": {
-      "type": ["string", "null"],
-      "description": "Company email address"
+      "type": "string",
+      "title": "Email ID",
+      "template": "{{emailId}}"
     },
     "exactAddress": {
-      "type": ["string", "null"],
-      "description": "Complete company address"
+      "type": "string",
+      "title": "Exact Address",
+      "template": "{{exactAddress}}"
     },
     "googleMapsLink": {
-      "type": ["string", "null"],
-      "description": "Google Maps business profile link"
+      "type": "string",
+      "title": "Google Maps Link",
+      "template": "{{googleMapsLink}}"
     },
     "locationRegion": {
-      "type": ["string", "null"],
-      "description": "City, state, or regional location"
+      "type": "string",
+      "title": "Location Region",
+      "template": "{{locationRegion}}"
     },
     "reviewCount": {
-      "type": ["integer", "null"],
-      "description": "Total number of Google reviews"
+      "type": "integer",
+      "title": "Review Count",
+      "template": "{{reviewCount}}"
     },
     "servicesOffered": {
-      "type": ["string", "null"],
-      "description": "Main services or business offerings"
+      "type": "string",
+      "title": "Services Offered",
+      "template": "{{servicesOffered}}"
     },
     "starRating": {
-      "type": ["number", "null"],
-      "description": "Google rating score"
+      "type": "number",
+      "title": "Star Rating",
+      "template": "{{starRating}}"
     },
     "totalCompaniesFound": {
-      "type": ["integer", "null"],
-      "description": "Total companies scraped in the run"
+      "type": "integer",
+      "title": "Total Companies Found",
+      "template": "{{totalCompaniesFound}}"
     }
   }
 }
