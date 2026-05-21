@@ -13,6 +13,7 @@
   "paths": {
     "/datasets/{datasetId}/items": {
       "get": {
+        "operationId": "getCompanyLeads",
         "summary": "Get scraped company leads",
         "description": "Returns scraped company lead records from the dataset.",
         "parameters": [
@@ -20,29 +21,31 @@
             "name": "datasetId",
             "in": "path",
             "required": true,
+            "description": "Apify dataset ID",
             "schema": {
               "type": "string"
-            },
-            "description": "Apify dataset ID"
+            }
           },
           {
             "name": "format",
             "in": "query",
             "required": false,
+            "description": "Export format",
             "schema": {
               "type": "string",
-              "enum": ["json", "csv", "xlsx"]
-            },
-            "description": "Response export format"
+              "enum": ["json", "csv", "xlsx"],
+              "default": "json"
+            }
           },
           {
             "name": "clean",
             "in": "query",
             "required": false,
+            "description": "Remove hidden/internal fields",
             "schema": {
-              "type": "boolean"
-            },
-            "description": "Remove hidden/internal fields"
+              "type": "boolean",
+              "default": true
+            }
           }
         ],
         "responses": {
@@ -70,61 +73,66 @@
         "properties": {
           "companyDomain": {
             "type": "string",
+            "nullable": true,
             "example": "https://business-software.in/"
           },
           "companyIndustry": {
             "type": "string",
+            "nullable": true,
             "example": "Software company"
           },
           "companyName": {
             "type": "string",
-            "example": "Business Software India I Leading Artificial Intelligent and Blockchain Company"
+            "nullable": true,
+            "example": "Business Software India"
           },
           "contactNumber": {
             "type": "string",
+            "nullable": true,
             "example": "+91 97331 92532"
           },
           "emailId": {
             "type": "string",
+            "nullable": true,
             "example": "info@business-software.in"
           },
           "exactAddress": {
             "type": "string",
-            "example": "91Springboard, 6th Floor, Trifecta Adatto, 21, ITPL Main Rd, Bengaluru, Karnataka 560048, India"
+            "nullable": true,
+            "example": "91Springboard, Bengaluru, Karnataka 560048, India"
           },
           "googleMapsLink": {
             "type": "string",
+            "nullable": true,
             "example": "https://www.google.com/maps/place/Business+Software+India"
           },
           "locationRegion": {
             "type": "string",
+            "nullable": true,
             "example": "Bangalore, India"
           },
           "reviewCount": {
             "type": "integer",
+            "nullable": true,
             "example": 5
           },
           "servicesOffered": {
             "type": "string",
+            "nullable": true,
             "example": "Software company"
           },
           "starRating": {
             "type": "number",
             "format": "float",
-            "example": 5.0
+            "nullable": true,
+            "example": 5
           },
           "totalCompaniesFound": {
             "type": "integer",
+            "nullable": true,
             "example": 1
           }
-        },
-        "required": [
-          "companyName",
-          "companyIndustry",
-          "contactNumber",
-          "exactAddress",
-          "googleMapsLink"
-        ]
+        }
       }
     }
   }
