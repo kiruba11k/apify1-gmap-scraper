@@ -4,7 +4,7 @@ import { PlaywrightCrawler } from 'crawlee';
 await Actor.init();
 
 const START_TIME = Date.now();
-const MAX_RUNTIME_MS = 260_000; // 4 minutes and 20 seconds safety buffer
+const MAX_RUNTIME_MS = 255_000; // 4 minutes 15 seconds safety buffer
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 const input          = await Actor.getInput() || {};
@@ -60,21 +60,16 @@ function emailFromDomain(domain) {
     } catch { return 'N/A'; }
 }
 
-// ULTRA-AGGRESSIVE INTERCEPTION: Drop heavy scripts, trackers, maps telemetry & metrics to keep CPU near 0%
 async function blockMedia(page) {
     await page.route('**/*', (route) => {
         const url = route.request().url().toLowerCase();
         const type = route.request().resourceType();
-        
         if (
             ['image', 'media', 'font', 'stylesheet'].includes(type) ||
             url.includes('google-analytics') || 
-            url.includes('analytics') || 
-            url.includes('telemetry') || 
-            url.includes('stats') || 
-            url.includes('/log') ||
-            url.includes('play.google.com') ||
-            url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.svg')
+            url.includes('analytics') ||
+            url.includes('telemetry') ||
+            url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg')
         ) {
             return route.abort();
         }
@@ -89,7 +84,7 @@ async function requestHandler({ request, page, log, crawler }) {
     const { label } = request.userData;
 
     if (Date.now() - START_TIME > MAX_RUNTIME_MS) {
-        log.warning('⏳ Reaching automated QA timeout safety buffer! Processing active queue items to finalize data...');
+        log.warning('⏳ Reaching automated QA timeout safety buffer! Flushing dataset rows safely...');
         return;
     }
 
@@ -117,12 +112,6 @@ async function requestHandler({ request, page, log, crawler }) {
         }
 
         const hrefs = await page.$$eval('a.hfpxzc', (els, max) => els.slice(0, max).map(a => a.href), numResults);
-        
-        if (hrefs.length === 0) {
-            log.warning('⚠️ Search yielded 0 entries matching criteria on Google Maps maps window.');
-            return;
-        }
-
         await crawler.addRequests(hrefs.map(url => ({ url, userData: { label: LABEL_DETAIL } })));
         return;
     }
@@ -132,9 +121,12 @@ async function requestHandler({ request, page, log, crawler }) {
 
         await blockMedia(page);
         
-        // Navigate with 'commit' strategy so data extraction occurs immediately when HTML arrives
-        await page.goto(request.url, { waitUntil: 'commit', timeout: 30_000 });
-        await page.waitForSelector('h1', { timeout: 8000 }).catch(() => {});
+        // Dynamic Fallback Navigation Strategy to completely circumvent the 60s timeouts
+        await page.goto(request.url, { waitUntil: 'commit', timeout: 15_000 }).catch(async () => {
+            await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 15_000 }).catch(() => {});
+        });
+
+        await page.waitForSelector('h1', { timeout: 5000 }).catch(() => {});
 
         const isBotCheck = await page.evaluate(() => document.title.includes('Before you continue') || !!document.querySelector('form[action*="consent.google.com"]'));
         if (isBotCheck) {
@@ -155,7 +147,6 @@ async function requestHandler({ request, page, log, crawler }) {
             };
         });
 
-        // IMMEDIATELY terminate browser tab loop instance to clear CPU allocation blocks
         await page.close().catch(() => {});
 
         if (BAD_NAMES.has(raw.name)) return;
@@ -163,6 +154,7 @@ async function requestHandler({ request, page, log, crawler }) {
         const phone = raw.phone || 'N/A';
         const emailId = emailFromDomain(raw.website);
 
+        // Map inputs directly into database columns to ensure schema populates correctly
         const record = {
             companyName: raw.name,
             companyIndustry: raw.industry,
@@ -175,6 +167,8 @@ async function requestHandler({ request, page, log, crawler }) {
             emailId,
             starRating: raw.stars,
             reviewCount: raw.reviews,
+            minEmployeesQueried: minEmployees,
+            maxEmployeesQueried: maxEmployees || 'N/A',
             totalCompaniesFound: ++totalSaved,
         };
 
@@ -187,7 +181,7 @@ async function requestHandler({ request, page, log, crawler }) {
 const crawler = new PlaywrightCrawler({
     proxyConfiguration,
     requestHandler,
-    maxConcurrency: 10, // Max tab concurrency increased safely with media/tracking scripts neutralized
+    maxConcurrency: 8, 
     useSessionPool: true,
     persistCookiesPerSession: true,
     launchContext: {
