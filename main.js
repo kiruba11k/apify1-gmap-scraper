@@ -3,7 +3,7 @@ import { PlaywrightCrawler } from 'crawlee';
 
 await Actor.init();
 
-// Track start time right at the beginning
+// Track start time right at initialization
 const START_TIME = Date.now();
 const MAX_RUNTIME_MS = 255_000; // 4 minutes and 15 seconds safety buffer
 
@@ -28,7 +28,7 @@ function buildQuery() {
 }
 
 const searchQuery = buildQuery();
-const SEARCH_URL  = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
+const SEARCH_URL  = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(searchQuery)}`;
 
 console.log(`\n🔍 Query  : "${searchQuery}"`);
 console.log(`⚙️  Target : ${numResults} results\n`);
@@ -51,6 +51,7 @@ function emailFromDomain(domain) {
     } catch { return 'N/A'; }
 }
 
+// Aggressive tracker, font, and asset network block rules to keep CPU usage minimal
 async function blockMedia(page) {
     await page.route('**/*', (route) => {
         const url = route.request().url();
@@ -73,9 +74,9 @@ const BAD_NAMES = new Set(['Results', 'Google Maps', 'N/A', '', 'Before you cont
 async function requestHandler({ request, page, log, crawler }) {
     const { label } = request.userData;
 
-    // 🛑 TIME CHECK: If we are close to the 5-minute limit, exit early
+    // Gracefully cancel processing further items if we approach the automated QA timeout boundary
     if (Date.now() - START_TIME > MAX_RUNTIME_MS) {
-        log.warning('⏳ Reaching automated QA 5-minute timeout! Stopping gracefully to preserve data...');
+        log.warning('⏳ Reaching automated QA 5-minute timeout window! Flushing active contexts to save current progress cleanly...');
         return;
     }
 
@@ -88,7 +89,6 @@ async function requestHandler({ request, page, log, crawler }) {
 
         let prevCount = 0, stall = 0;
         while (true) {
-            // Check runtime during scrolling loop too
             if (Date.now() - START_TIME > MAX_RUNTIME_MS) break;
 
             const count = await page.$$eval('a.hfpxzc', els => els.length);
@@ -106,7 +106,7 @@ async function requestHandler({ request, page, log, crawler }) {
         const hrefs = await page.$$eval('a.hfpxzc', (els, max) => els.slice(0, max).map(a => a.href), numResults);
         
         if (hrefs.length === 0) {
-            log.warning('⚠️ No results found on Google Maps for this query.');
+            log.warning('⚠️ Search yielded 0 entries matching criteria on Google Maps maps window.');
             return;
         }
 
@@ -118,12 +118,16 @@ async function requestHandler({ request, page, log, crawler }) {
         if (totalSaved >= numResults) return;
 
         await blockMedia(page);
+        
+        // Navigate on commit event to allow instant procedural DOM harvesting
         await page.goto(request.url, { waitUntil: 'commit', timeout: 30_000 });
+        await page.waitForSelector('h1', { timeout: 7000 }).catch(() => {});
 
         const isBotCheck = await page.evaluate(() => document.title.includes('Before you continue') || !!document.querySelector('form[action*="consent.google.com"]'));
-        if (isBotCheck) return;
-
-        await page.waitForSelector('h1', { timeout: 7000 }).catch(() => {});
+        if (isBotCheck) {
+            await page.close().catch(() => {});
+            return;
+        }
 
         const raw = await page.evaluate(() => {
             const t = sel => document.querySelector(sel)?.textContent?.trim() || 'N/A';
@@ -137,6 +141,9 @@ async function requestHandler({ request, page, log, crawler }) {
                 reviews: document.querySelector('[aria-label*="reviews"]')?.getAttribute('aria-label')?.match(/(\d+)/)?.[0] || '0'
             };
         });
+
+        // Close page frame forcefully here to clear memory stack loops running inside chromium instances
+        await page.close().catch(() => {});
 
         if (BAD_NAMES.has(raw.name)) return;
 
@@ -167,7 +174,7 @@ async function requestHandler({ request, page, log, crawler }) {
 const crawler = new PlaywrightCrawler({
     proxyConfiguration,
     requestHandler,
-    maxConcurrency: 10, // Increased concurrency because memory extraction is optimized
+    maxConcurrency: 8, // Set comfortably to leverage multi-tabbing since CPU consumption per tab is minimized
     useSessionPool: true,
     persistCookiesPerSession: true,
     launchContext: {
