@@ -7,9 +7,9 @@ This Actor scrapes company profiles from Google Maps search results and exports 
 - Builds a Google Maps query from your input parameters.
 - Opens the Google Maps search result list for that query.
 - Scrolls the result feed until it collects enough place links.
-- Visits each place detail page.
-- Extracts normalized company fields.
-- Stores data into the default Apify dataset.
+- Saves search-list results to the default Apify dataset as soon as links are collected, so output is available before short run timeouts.
+- Visits remaining place detail pages only when there is enough time and the result was not already saved.
+- Extracts normalized company fields from the best data available before timeout.
 
 ## Extracted output fields
 
@@ -96,5 +96,6 @@ Query logic:
 ## Notes
 
 - Data quality depends on what each Google Maps place profile exposes publicly.
+- The actor prioritizes saving records before a run timeout; records saved directly from the search list may contain `N/A` for fields that require opening a detail page.
 - `emailId` is inferred as `info@domain` when website domain is available.
 - `contactNumber` may be parsed from page text when a direct phone selector is absent.

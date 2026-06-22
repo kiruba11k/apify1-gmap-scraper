@@ -5,7 +5,13 @@ await Actor.init();
 
 // Track start time right at the beginning
 const START_TIME = Date.now();
-const MAX_RUNTIME_MS = 255_000; // 4 minutes and 15 seconds safety buffer
+const DEFAULT_RUNTIME_MS = 300_000;
+const SAFETY_BUFFER_MS = 45_000;
+const timeoutAtRaw = process.env.ACTOR_TIMEOUT_AT || process.env.APIFY_TIMEOUT_AT || '';
+const actorTimeoutAt = Number(timeoutAtRaw) || Date.parse(timeoutAtRaw) || 0;
+const MAX_RUNTIME_MS = actorTimeoutAt > START_TIME
+    ? Math.max(30_000, actorTimeoutAt - START_TIME - SAFETY_BUFFER_MS)
+    : DEFAULT_RUNTIME_MS - SAFETY_BUFFER_MS; // stop before Apify hard-kills the run
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 const input          = await Actor.getInput() || {};
@@ -39,6 +45,8 @@ const proxyConfiguration = useProxy
     : undefined;
 
 let totalSaved = 0;
+let stopRequested = false;
+const savedUrls = new Set();
 const LABEL_SEARCH = 'SEARCH';
 const LABEL_DETAIL = 'DETAIL';
 
@@ -69,12 +77,46 @@ async function blockMedia(page) {
 
 const BAD_NAMES = new Set(['Results', 'Google Maps', 'N/A', '', 'Before you continue to Google']);
 
+function isNearTimeout() {
+    return stopRequested || Date.now() - START_TIME > MAX_RUNTIME_MS;
+}
+
+async function saveRecord(raw, googleMapsLink, log) {
+    if (totalSaved >= numResults || savedUrls.has(googleMapsLink) || BAD_NAMES.has(raw.name)) return false;
+
+    const website = raw.website || 'N/A';
+    const industry = raw.industry || 'Software company';
+    const record = {
+        companyName: raw.name,
+        companyIndustry: industry,
+        locationRegion: location,
+        exactAddress: raw.address || 'N/A',
+        servicesOffered: industry,
+        companyDomain: website,
+        googleMapsLink,
+        contactNumber: raw.phone || 'N/A',
+        emailId: emailFromDomain(website),
+        starRating: raw.stars || 'N/A',
+        reviewCount: raw.reviews || '0',
+        totalCompaniesFound: ++totalSaved,
+    };
+
+    savedUrls.add(googleMapsLink);
+    await Actor.pushData(record);
+    log.info(`✔ [${totalSaved}] Saved: ${raw.name}`);
+    return true;
+}
+
+Actor.on('aborting', () => {
+    stopRequested = true;
+});
+
 // ─── REQUEST HANDLER ─────────────────────────────────────────────────────────
 async function requestHandler({ request, page, log, crawler }) {
     const { label } = request.userData;
 
     // 🛑 TIME CHECK: If we are close to the 5-minute limit, exit early
-    if (Date.now() - START_TIME > MAX_RUNTIME_MS) {
+    if (isNearTimeout()) {
         log.warning('⏳ Reaching automated QA 5-minute timeout! Stopping gracefully to preserve data...');
         return;
     }
@@ -89,7 +131,7 @@ async function requestHandler({ request, page, log, crawler }) {
         let prevCount = 0, stall = 0;
         while (true) {
             // Check runtime during scrolling loop too
-            if (Date.now() - START_TIME > MAX_RUNTIME_MS) break;
+            if (isNearTimeout()) break;
 
             const count = await page.$$eval('a.hfpxzc', els => els.length);
             log.info(`Collected ${count}/${numResults} results...`);
@@ -103,19 +145,40 @@ async function requestHandler({ request, page, log, crawler }) {
             await page.waitForTimeout(1000);
         }
 
-        const hrefs = await page.$$eval('a.hfpxzc', (els, max) => els.slice(0, max).map(a => a.href), numResults);
+        const listResults = await page.$$eval('a.hfpxzc', (els, max) => els.slice(0, max).map((a) => ({
+            name: a.getAttribute('aria-label')?.trim() || a.textContent?.trim() || 'N/A',
+            url: a.href,
+        })), numResults);
+        const hrefs = listResults.map(({ url }) => url);
+
+        for (const result of listResults) {
+            if (isNearTimeout()) break;
+            await saveRecord({
+                name: result.name,
+                industry: industryFilter || 'N/A',
+                address: 'N/A',
+                phone: 'N/A',
+                website: 'N/A',
+                stars: 'N/A',
+                reviews: '0',
+            }, result.url, log);
+        }
         
         if (hrefs.length === 0) {
             log.warning('⚠️ No results found on Google Maps for this query.');
             return;
         }
 
-        await crawler.addRequests(hrefs.map(url => ({ url, userData: { label: LABEL_DETAIL } })));
+        if (!isNearTimeout() && totalSaved < numResults) {
+            await crawler.addRequests(hrefs
+                .filter(url => !savedUrls.has(url))
+                .map(url => ({ url, userData: { label: LABEL_DETAIL } })));
+        }
         return;
     }
 
     if (label === LABEL_DETAIL) {
-        if (totalSaved >= numResults) return;
+        if (totalSaved >= numResults || savedUrls.has(request.url) || isNearTimeout()) return;
 
         await blockMedia(page);
         await page.goto(request.url, { waitUntil: 'commit', timeout: 30_000 });
@@ -138,28 +201,7 @@ async function requestHandler({ request, page, log, crawler }) {
             };
         });
 
-        if (BAD_NAMES.has(raw.name)) return;
-
-        const phone = raw.phone || 'N/A';
-        const emailId = emailFromDomain(raw.website);
-
-        const record = {
-            companyName: raw.name,
-            companyIndustry: raw.industry,
-            locationRegion: location,
-            exactAddress: raw.address,
-            servicesOffered: raw.industry,
-            companyDomain: raw.website,
-            googleMapsLink: request.url, 
-            contactNumber: phone,
-            emailId,
-            starRating: raw.stars,
-            reviewCount: raw.reviews,
-            totalCompaniesFound: ++totalSaved,
-        };
-
-        await Actor.pushData(record);
-        log.info(`✔ [${totalSaved}] Saved: ${raw.name}`);
+        await saveRecord(raw, request.url, log);
     }
 }
 
@@ -167,9 +209,10 @@ async function requestHandler({ request, page, log, crawler }) {
 const crawler = new PlaywrightCrawler({
     proxyConfiguration,
     requestHandler,
-    maxConcurrency: 10, // Increased concurrency because memory extraction is optimized
+    maxConcurrency: 3,
     useSessionPool: true,
     persistCookiesPerSession: true,
+    requestHandlerTimeoutSecs: 45,
     launchContext: {
         launchOptions: {
             args: ['--disable-blink-features=AutomationControlled', '--lang=en-US'],
