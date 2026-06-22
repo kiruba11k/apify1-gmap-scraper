@@ -37,8 +37,8 @@ function buildMapSearchQuery() {
 const displayQuery     = buildDisplayQuery();
 const mapSearchQuery   = buildMapSearchQuery();
 
-// FIXED: Corrected the broken string interpolation syntax from previous runs
-const SEARCH_URL       = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}`;
+// FIXED: Clean, production-ready Google Maps standard search URL
+const SEARCH_URL       = `https://www.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&hl=en`;
 
 console.log(`\n🔍 Intended Query : "${displayQuery}"`);
 console.log(`🗺️  Actual Map Search: "${mapSearchQuery}"`);
@@ -115,6 +115,12 @@ async function requestHandler({ request, page, log, crawler }) {
         }
 
         const hrefs = await page.$$eval('a.hfpxzc', (els, max) => els.slice(0, max).map(a => a.href), numResults);
+        
+        if (hrefs.length === 0) {
+            log.warning('⚠️ Search yielded 0 entries matching criteria on Google Maps windows.');
+            return;
+        }
+
         await crawler.addRequests(hrefs.map(url => ({ url, userData: { label: LABEL_DETAIL } })));
         return;
     }
@@ -124,7 +130,6 @@ async function requestHandler({ request, page, log, crawler }) {
 
         await blockMedia(page);
         
-        // FIXED: Reverted to a single, stable navigation timeline hook with a generous timeout boundary
         await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 40_000 }).catch(() => {});
         await page.waitForSelector('h1', { timeout: 8000 }).catch(() => {});
 
