@@ -4,7 +4,7 @@ import { PlaywrightCrawler } from 'crawlee';
 await Actor.init();
 
 const START_TIME = Date.now();
-const MAX_RUNTIME_MS = 255_000; // 4 minutes and 15 seconds safety buffer
+const MAX_RUNTIME_MS = 260_000; // 4 minutes and 20 seconds safety buffer
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 const input          = await Actor.getInput() || {};
@@ -36,9 +36,7 @@ function buildMapSearchQuery() {
 
 const displayQuery     = buildDisplayQuery();
 const mapSearchQuery   = buildMapSearchQuery();
-
-// FIXED: Corrected string interpolation syntax error from previous script templates
-const SEARCH_URL       = `https://www.google.com/maps/search/${encodeURIComponent(mapSearchQuery)}`;
+const SEARCH_URL       = `https://www.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}`;
 
 console.log(`\n🔍 Intended Query : "${displayQuery}"`);
 console.log(`🗺️  Actual Map Search: "${mapSearchQuery}"`);
@@ -62,15 +60,21 @@ function emailFromDomain(domain) {
     } catch { return 'N/A'; }
 }
 
+// ULTRA-AGGRESSIVE INTERCEPTION: Drop heavy scripts, trackers, maps telemetry & metrics to keep CPU near 0%
 async function blockMedia(page) {
     await page.route('**/*', (route) => {
-        const url = route.request().url();
+        const url = route.request().url().toLowerCase();
         const type = route.request().resourceType();
+        
         if (
-            ['image', 'media', 'font'].includes(type) ||
+            ['image', 'media', 'font', 'stylesheet'].includes(type) ||
             url.includes('google-analytics') || 
+            url.includes('analytics') || 
+            url.includes('telemetry') || 
+            url.includes('stats') || 
+            url.includes('/log') ||
             url.includes('play.google.com') ||
-            url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg')
+            url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.svg')
         ) {
             return route.abort();
         }
@@ -85,7 +89,7 @@ async function requestHandler({ request, page, log, crawler }) {
     const { label } = request.userData;
 
     if (Date.now() - START_TIME > MAX_RUNTIME_MS) {
-        log.warning('⏳ Reaching automated QA 5-minute timeout window! Flushing cleanly to save progress...');
+        log.warning('⏳ Reaching automated QA timeout safety buffer! Processing active queue items to finalize data...');
         return;
     }
 
@@ -128,8 +132,9 @@ async function requestHandler({ request, page, log, crawler }) {
 
         await blockMedia(page);
         
+        // Navigate with 'commit' strategy so data extraction occurs immediately when HTML arrives
         await page.goto(request.url, { waitUntil: 'commit', timeout: 30_000 });
-        await page.waitForSelector('h1', { timeout: 7000 }).catch(() => {});
+        await page.waitForSelector('h1', { timeout: 8000 }).catch(() => {});
 
         const isBotCheck = await page.evaluate(() => document.title.includes('Before you continue') || !!document.querySelector('form[action*="consent.google.com"]'));
         if (isBotCheck) {
@@ -150,6 +155,7 @@ async function requestHandler({ request, page, log, crawler }) {
             };
         });
 
+        // IMMEDIATELY terminate browser tab loop instance to clear CPU allocation blocks
         await page.close().catch(() => {});
 
         if (BAD_NAMES.has(raw.name)) return;
@@ -181,7 +187,7 @@ async function requestHandler({ request, page, log, crawler }) {
 const crawler = new PlaywrightCrawler({
     proxyConfiguration,
     requestHandler,
-    maxConcurrency: 8, 
+    maxConcurrency: 10, // Max tab concurrency increased safely with media/tracking scripts neutralized
     useSessionPool: true,
     persistCookiesPerSession: true,
     launchContext: {
