@@ -36,8 +36,9 @@ function buildMapSearchQuery() {
 
 const displayQuery     = buildDisplayQuery();
 const mapSearchQuery   = buildMapSearchQuery();
-// FIXED: Fixed the structural syntax string interpolation typo from the older codebase
-const SEARCH_URL       = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}`;
+
+// FIXED: Corrected string interpolation syntax error from previous script templates
+const SEARCH_URL       = `https://www.google.com/maps/search/${encodeURIComponent(mapSearchQuery)}`;
 
 console.log(`\n🔍 Intended Query : "${displayQuery}"`);
 console.log(`🗺️  Actual Map Search: "${mapSearchQuery}"`);
@@ -127,7 +128,6 @@ async function requestHandler({ request, page, log, crawler }) {
 
         await blockMedia(page);
         
-        // 1. Navigate using 'commit' instead of letting heavy client-side scripts spin up completely
         await page.goto(request.url, { waitUntil: 'commit', timeout: 30_000 });
         await page.waitForSelector('h1', { timeout: 7000 }).catch(() => {});
 
@@ -150,8 +150,6 @@ async function requestHandler({ request, page, log, crawler }) {
             };
         });
 
-        // CRITICAL OPTIMIZATION: Force close the browser tab instance now!
-        // This drops CPU use to 0% per tab and speeds up overall collection
         await page.close().catch(() => {});
 
         if (BAD_NAMES.has(raw.name)) return;
