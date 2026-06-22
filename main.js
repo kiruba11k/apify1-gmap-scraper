@@ -3,9 +3,8 @@ import { PlaywrightCrawler } from 'crawlee';
 
 await Actor.init();
 
-// Track start time right at initialization
 const START_TIME = Date.now();
-const MAX_RUNTIME_MS = 255_000; // 4 minutes and 15 seconds safety buffer
+const MAX_RUNTIME_MS = 255_000; // 4 mins 15 seconds safety buffer
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 const input          = await Actor.getInput() || {};
@@ -16,8 +15,9 @@ const maxEmployees   =  input.maxEmployees    ?? null;
 const numResults     = Math.min(input.numResults ?? 50, 500);
 const useProxy       =  input.useProxy        ?? true;
 
-// ─── QUERY BUILDER ────────────────────────────────────────────────────────────
-function buildQuery() {
+// ─── QUERY BUILDERS ───────────────────────────────────────────────────────────
+// 1. For display logs (showing the user's intent)
+function buildDisplayQuery() {
     let base = (input.searchQuery || '').trim();
     if (!base) base = industryFilter ? `${industryFilter} companies` : 'companies';
     const cityName = location.split(',')[0].toLowerCase();
@@ -27,11 +27,22 @@ function buildQuery() {
     return base;
 }
 
-const searchQuery = buildQuery();
-const SEARCH_URL  = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(searchQuery)}`;
+// 2. For Google Maps (STRIPIING the employee filter text so Google Maps doesn't break)
+function buildMapSearchQuery() {
+    let base = (input.searchQuery || '').trim();
+    if (!base) base = industryFilter ? `${industryFilter} companies` : 'companies';
+    const cityName = location.split(',')[0].toLowerCase();
+    if (!base.toLowerCase().includes(cityName)) base += ` in ${location}`;
+    return base;
+}
 
-console.log(`\n🔍 Query  : "${searchQuery}"`);
-console.log(`⚙️  Target : ${numResults} results\n`);
+const displayQuery     = buildDisplayQuery();
+const mapSearchQuery   = buildMapSearchQuery();
+const SEARCH_URL       = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}`;
+
+console.log(`\n🔍 Intended Query : "${displayQuery}"`);
+console.log(`🗺️  Actual Map Search: "${mapSearchQuery}"`);
+console.log(`⚙️  Target        : ${numResults} results\n`);
 
 // ─── PROXY ────────────────────────────────────────────────────────────────────
 const proxyConfiguration = useProxy
@@ -51,7 +62,6 @@ function emailFromDomain(domain) {
     } catch { return 'N/A'; }
 }
 
-// Aggressive tracker, font, and asset network block rules to keep CPU usage minimal
 async function blockMedia(page) {
     await page.route('**/*', (route) => {
         const url = route.request().url();
@@ -74,9 +84,8 @@ const BAD_NAMES = new Set(['Results', 'Google Maps', 'N/A', '', 'Before you cont
 async function requestHandler({ request, page, log, crawler }) {
     const { label } = request.userData;
 
-    // Gracefully cancel processing further items if we approach the automated QA timeout boundary
     if (Date.now() - START_TIME > MAX_RUNTIME_MS) {
-        log.warning('⏳ Reaching automated QA 5-minute timeout window! Flushing active contexts to save current progress cleanly...');
+        log.warning('⏳ Reaching automated QA 5-minute timeout window! Flushing cleanly to save progress...');
         return;
     }
 
@@ -119,7 +128,6 @@ async function requestHandler({ request, page, log, crawler }) {
 
         await blockMedia(page);
         
-        // Navigate on commit event to allow instant procedural DOM harvesting
         await page.goto(request.url, { waitUntil: 'commit', timeout: 30_000 });
         await page.waitForSelector('h1', { timeout: 7000 }).catch(() => {});
 
@@ -142,7 +150,6 @@ async function requestHandler({ request, page, log, crawler }) {
             };
         });
 
-        // Close page frame forcefully here to clear memory stack loops running inside chromium instances
         await page.close().catch(() => {});
 
         if (BAD_NAMES.has(raw.name)) return;
@@ -174,7 +181,7 @@ async function requestHandler({ request, page, log, crawler }) {
 const crawler = new PlaywrightCrawler({
     proxyConfiguration,
     requestHandler,
-    maxConcurrency: 8, // Set comfortably to leverage multi-tabbing since CPU consumption per tab is minimized
+    maxConcurrency: 8, 
     useSessionPool: true,
     persistCookiesPerSession: true,
     launchContext: {
