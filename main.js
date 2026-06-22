@@ -3,8 +3,9 @@ import { PlaywrightCrawler } from 'crawlee';
 
 await Actor.init();
 
+// Track start time right at the beginning
 const START_TIME = Date.now();
-const MAX_RUNTIME_MS = 255_000; // 4 mins 15 seconds safety buffer
+const MAX_RUNTIME_MS = 255_000; // 4 minutes and 15 seconds safety buffer
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 const input          = await Actor.getInput() || {};
@@ -15,9 +16,8 @@ const maxEmployees   =  input.maxEmployees    ?? null;
 const numResults     = Math.min(input.numResults ?? 50, 500);
 const useProxy       =  input.useProxy        ?? true;
 
-// ─── QUERY BUILDERS ───────────────────────────────────────────────────────────
-// 1. For display logs (showing the user's intent)
-function buildDisplayQuery() {
+// ─── QUERY BUILDER ────────────────────────────────────────────────────────────
+function buildQuery() {
     let base = (input.searchQuery || '').trim();
     if (!base) base = industryFilter ? `${industryFilter} companies` : 'companies';
     const cityName = location.split(',')[0].toLowerCase();
@@ -27,22 +27,11 @@ function buildDisplayQuery() {
     return base;
 }
 
-// 2. For Google Maps (STRIPIING the employee filter text so Google Maps doesn't break)
-function buildMapSearchQuery() {
-    let base = (input.searchQuery || '').trim();
-    if (!base) base = industryFilter ? `${industryFilter} companies` : 'companies';
-    const cityName = location.split(',')[0].toLowerCase();
-    if (!base.toLowerCase().includes(cityName)) base += ` in ${location}`;
-    return base;
-}
+const searchQuery = buildQuery();
+const SEARCH_URL  = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
 
-const displayQuery     = buildDisplayQuery();
-const mapSearchQuery   = buildMapSearchQuery();
-const SEARCH_URL       = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}`;
-
-console.log(`\n🔍 Intended Query : "${displayQuery}"`);
-console.log(`🗺️  Actual Map Search: "${mapSearchQuery}"`);
-console.log(`⚙️  Target        : ${numResults} results\n`);
+console.log(`\n🔍 Query  : "${searchQuery}"`);
+console.log(`⚙️  Target : ${numResults} results\n`);
 
 // ─── PROXY ────────────────────────────────────────────────────────────────────
 const proxyConfiguration = useProxy
@@ -84,8 +73,9 @@ const BAD_NAMES = new Set(['Results', 'Google Maps', 'N/A', '', 'Before you cont
 async function requestHandler({ request, page, log, crawler }) {
     const { label } = request.userData;
 
+    // 🛑 TIME CHECK: If we are close to the 5-minute limit, exit early
     if (Date.now() - START_TIME > MAX_RUNTIME_MS) {
-        log.warning('⏳ Reaching automated QA 5-minute timeout window! Flushing cleanly to save progress...');
+        log.warning('⏳ Reaching automated QA 5-minute timeout! Stopping gracefully to preserve data...');
         return;
     }
 
@@ -98,6 +88,7 @@ async function requestHandler({ request, page, log, crawler }) {
 
         let prevCount = 0, stall = 0;
         while (true) {
+            // Check runtime during scrolling loop too
             if (Date.now() - START_TIME > MAX_RUNTIME_MS) break;
 
             const count = await page.$$eval('a.hfpxzc', els => els.length);
@@ -115,7 +106,7 @@ async function requestHandler({ request, page, log, crawler }) {
         const hrefs = await page.$$eval('a.hfpxzc', (els, max) => els.slice(0, max).map(a => a.href), numResults);
         
         if (hrefs.length === 0) {
-            log.warning('⚠️ Search yielded 0 entries matching criteria on Google Maps maps window.');
+            log.warning('⚠️ No results found on Google Maps for this query.');
             return;
         }
 
@@ -127,15 +118,12 @@ async function requestHandler({ request, page, log, crawler }) {
         if (totalSaved >= numResults) return;
 
         await blockMedia(page);
-        
         await page.goto(request.url, { waitUntil: 'commit', timeout: 30_000 });
-        await page.waitForSelector('h1', { timeout: 7000 }).catch(() => {});
 
         const isBotCheck = await page.evaluate(() => document.title.includes('Before you continue') || !!document.querySelector('form[action*="consent.google.com"]'));
-        if (isBotCheck) {
-            await page.close().catch(() => {});
-            return;
-        }
+        if (isBotCheck) return;
+
+        await page.waitForSelector('h1', { timeout: 7000 }).catch(() => {});
 
         const raw = await page.evaluate(() => {
             const t = sel => document.querySelector(sel)?.textContent?.trim() || 'N/A';
@@ -149,8 +137,6 @@ async function requestHandler({ request, page, log, crawler }) {
                 reviews: document.querySelector('[aria-label*="reviews"]')?.getAttribute('aria-label')?.match(/(\d+)/)?.[0] || '0'
             };
         });
-
-        await page.close().catch(() => {});
 
         if (BAD_NAMES.has(raw.name)) return;
 
@@ -181,7 +167,7 @@ async function requestHandler({ request, page, log, crawler }) {
 const crawler = new PlaywrightCrawler({
     proxyConfiguration,
     requestHandler,
-    maxConcurrency: 8, 
+    maxConcurrency: 10, // Increased concurrency because memory extraction is optimized
     useSessionPool: true,
     persistCookiesPerSession: true,
     launchContext: {
