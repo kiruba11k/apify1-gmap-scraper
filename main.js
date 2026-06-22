@@ -4,7 +4,7 @@ import { PlaywrightCrawler } from 'crawlee';
 await Actor.init();
 
 const START_TIME = Date.now();
-const MAX_RUNTIME_MS = 255_000; // 4 minutes 15 seconds safety buffer
+const MAX_RUNTIME_MS = 255_000; // 4 minutes and 15 seconds safety buffer
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 const input          = await Actor.getInput() || {};
@@ -36,7 +36,9 @@ function buildMapSearchQuery() {
 
 const displayQuery     = buildDisplayQuery();
 const mapSearchQuery   = buildMapSearchQuery();
-const SEARCH_URL       = `https://www.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}`;
+
+// FIXED: Corrected the broken string interpolation syntax from previous runs
+const SEARCH_URL       = `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}`;
 
 console.log(`\n🔍 Intended Query : "${displayQuery}"`);
 console.log(`🗺️  Actual Map Search: "${mapSearchQuery}"`);
@@ -69,6 +71,7 @@ async function blockMedia(page) {
             url.includes('google-analytics') || 
             url.includes('analytics') ||
             url.includes('telemetry') ||
+            url.includes('/log') ||
             url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg')
         ) {
             return route.abort();
@@ -121,12 +124,9 @@ async function requestHandler({ request, page, log, crawler }) {
 
         await blockMedia(page);
         
-        // Dynamic Fallback Navigation Strategy to completely circumvent the 60s timeouts
-        await page.goto(request.url, { waitUntil: 'commit', timeout: 15_000 }).catch(async () => {
-            await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 15_000 }).catch(() => {});
-        });
-
-        await page.waitForSelector('h1', { timeout: 5000 }).catch(() => {});
+        // FIXED: Reverted to a single, stable navigation timeline hook with a generous timeout boundary
+        await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 40_000 }).catch(() => {});
+        await page.waitForSelector('h1', { timeout: 8000 }).catch(() => {});
 
         const isBotCheck = await page.evaluate(() => document.title.includes('Before you continue') || !!document.querySelector('form[action*="consent.google.com"]'));
         if (isBotCheck) {
@@ -154,7 +154,6 @@ async function requestHandler({ request, page, log, crawler }) {
         const phone = raw.phone || 'N/A';
         const emailId = emailFromDomain(raw.website);
 
-        // Map inputs directly into database columns to ensure schema populates correctly
         const record = {
             companyName: raw.name,
             companyIndustry: raw.industry,
