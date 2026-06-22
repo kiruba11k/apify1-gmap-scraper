@@ -3,6 +3,7 @@ import { PlaywrightCrawler } from 'crawlee';
 
 await Actor.init();
 
+// Track start time right at the beginning
 const START_TIME = Date.now();
 const MAX_RUNTIME_MS = 255_000; // 4 minutes and 15 seconds safety buffer
 
@@ -15,8 +16,8 @@ const maxEmployees   =  input.maxEmployees    ?? null;
 const numResults     = Math.min(input.numResults ?? 50, 500);
 const useProxy       =  input.useProxy        ?? true;
 
-// ─── QUERY BUILDERS ───────────────────────────────────────────────────────────
-function buildDisplayQuery() {
+// ─── QUERY BUILDER ────────────────────────────────────────────────────────────
+function buildQuery() {
     let base = (input.searchQuery || '').trim();
     if (!base) base = industryFilter ? `${industryFilter} companies` : 'companies';
     const cityName = location.split(',')[0].toLowerCase();
@@ -26,23 +27,11 @@ function buildDisplayQuery() {
     return base;
 }
 
-function buildMapSearchQuery() {
-    let base = (input.searchQuery || '').trim();
-    if (!base) base = industryFilter ? `${industryFilter} companies` : 'companies';
-    const cityName = location.split(',')[0].toLowerCase();
-    if (!base.toLowerCase().includes(cityName)) base += ` in ${location}`;
-    return base;
-}
+const searchQuery = buildQuery();
+const SEARCH_URL  = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
 
-const displayQuery     = buildDisplayQuery();
-const mapSearchQuery   = buildMapSearchQuery();
-
-// FIXED: Clean, production-ready Google Maps standard search URL
-const SEARCH_URL       = `https://www.google.com/maps?q=${encodeURIComponent(mapSearchQuery)}&hl=en`;
-
-console.log(`\n🔍 Intended Query : "${displayQuery}"`);
-console.log(`🗺️  Actual Map Search: "${mapSearchQuery}"`);
-console.log(`⚙️  Target        : ${numResults} results\n`);
+console.log(`\n🔍 Query  : "${searchQuery}"`);
+console.log(`⚙️  Target : ${numResults} results\n`);
 
 // ─── PROXY ────────────────────────────────────────────────────────────────────
 const proxyConfiguration = useProxy
@@ -64,14 +53,12 @@ function emailFromDomain(domain) {
 
 async function blockMedia(page) {
     await page.route('**/*', (route) => {
-        const url = route.request().url().toLowerCase();
+        const url = route.request().url();
         const type = route.request().resourceType();
         if (
-            ['image', 'media', 'font', 'stylesheet'].includes(type) ||
+            ['image', 'media', 'font'].includes(type) ||
             url.includes('google-analytics') || 
-            url.includes('analytics') ||
-            url.includes('telemetry') ||
-            url.includes('/log') ||
+            url.includes('play.google.com') ||
             url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg')
         ) {
             return route.abort();
@@ -86,8 +73,9 @@ const BAD_NAMES = new Set(['Results', 'Google Maps', 'N/A', '', 'Before you cont
 async function requestHandler({ request, page, log, crawler }) {
     const { label } = request.userData;
 
+    // 🛑 TIME CHECK: If we are close to the 5-minute limit, exit early
     if (Date.now() - START_TIME > MAX_RUNTIME_MS) {
-        log.warning('⏳ Reaching automated QA timeout safety buffer! Flushing dataset rows safely...');
+        log.warning('⏳ Reaching automated QA 5-minute timeout! Stopping gracefully to preserve data...');
         return;
     }
 
@@ -100,6 +88,7 @@ async function requestHandler({ request, page, log, crawler }) {
 
         let prevCount = 0, stall = 0;
         while (true) {
+            // Check runtime during scrolling loop too
             if (Date.now() - START_TIME > MAX_RUNTIME_MS) break;
 
             const count = await page.$$eval('a.hfpxzc', els => els.length);
@@ -117,7 +106,7 @@ async function requestHandler({ request, page, log, crawler }) {
         const hrefs = await page.$$eval('a.hfpxzc', (els, max) => els.slice(0, max).map(a => a.href), numResults);
         
         if (hrefs.length === 0) {
-            log.warning('⚠️ Search yielded 0 entries matching criteria on Google Maps windows.');
+            log.warning('⚠️ No results found on Google Maps for this query.');
             return;
         }
 
@@ -129,15 +118,12 @@ async function requestHandler({ request, page, log, crawler }) {
         if (totalSaved >= numResults) return;
 
         await blockMedia(page);
-        
-        await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 40_000 }).catch(() => {});
-        await page.waitForSelector('h1', { timeout: 8000 }).catch(() => {});
+        await page.goto(request.url, { waitUntil: 'commit', timeout: 30_000 });
 
         const isBotCheck = await page.evaluate(() => document.title.includes('Before you continue') || !!document.querySelector('form[action*="consent.google.com"]'));
-        if (isBotCheck) {
-            await page.close().catch(() => {});
-            return;
-        }
+        if (isBotCheck) return;
+
+        await page.waitForSelector('h1', { timeout: 7000 }).catch(() => {});
 
         const raw = await page.evaluate(() => {
             const t = sel => document.querySelector(sel)?.textContent?.trim() || 'N/A';
@@ -151,8 +137,6 @@ async function requestHandler({ request, page, log, crawler }) {
                 reviews: document.querySelector('[aria-label*="reviews"]')?.getAttribute('aria-label')?.match(/(\d+)/)?.[0] || '0'
             };
         });
-
-        await page.close().catch(() => {});
 
         if (BAD_NAMES.has(raw.name)) return;
 
@@ -171,8 +155,6 @@ async function requestHandler({ request, page, log, crawler }) {
             emailId,
             starRating: raw.stars,
             reviewCount: raw.reviews,
-            minEmployeesQueried: minEmployees,
-            maxEmployeesQueried: maxEmployees || 'N/A',
             totalCompaniesFound: ++totalSaved,
         };
 
@@ -185,7 +167,7 @@ async function requestHandler({ request, page, log, crawler }) {
 const crawler = new PlaywrightCrawler({
     proxyConfiguration,
     requestHandler,
-    maxConcurrency: 8, 
+    maxConcurrency: 10, // Increased concurrency because memory extraction is optimized
     useSessionPool: true,
     persistCookiesPerSession: true,
     launchContext: {
