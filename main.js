@@ -3,6 +3,10 @@ import { PlaywrightCrawler } from 'crawlee';
 
 await Actor.init();
 
+// Track start time right at the beginning
+const START_TIME = Date.now();
+const MAX_RUNTIME_MS = 255_000; // 4 minutes and 15 seconds safety buffer
+
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 const input          = await Actor.getInput() || {};
 const location       = (input.location       || 'Bangalore, India').trim();
@@ -24,7 +28,6 @@ function buildQuery() {
 }
 
 const searchQuery = buildQuery();
-// FIXED: Fixed missing '$' syntax error in string interpolation
 const SEARCH_URL  = `https://www.google.com/maps/search/${encodeURIComponent(searchQuery)}`;
 
 console.log(`\n🔍 Query  : "${searchQuery}"`);
@@ -48,7 +51,6 @@ function emailFromDomain(domain) {
     } catch { return 'N/A'; }
 }
 
-// OPTIMIZED: Robust asset and tracking blocker to drop CPU utilization
 async function blockMedia(page) {
     await page.route('**/*', (route) => {
         const url = route.request().url();
@@ -71,6 +73,12 @@ const BAD_NAMES = new Set(['Results', 'Google Maps', 'N/A', '', 'Before you cont
 async function requestHandler({ request, page, log, crawler }) {
     const { label } = request.userData;
 
+    // 🛑 TIME CHECK: If we are close to the 5-minute limit, exit early
+    if (Date.now() - START_TIME > MAX_RUNTIME_MS) {
+        log.warning('⏳ Reaching automated QA 5-minute timeout! Stopping gracefully to preserve data...');
+        return;
+    }
+
     if (label === LABEL_SEARCH) {
         await blockMedia(page);
         await page.goto(request.url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
@@ -80,6 +88,9 @@ async function requestHandler({ request, page, log, crawler }) {
 
         let prevCount = 0, stall = 0;
         while (true) {
+            // Check runtime during scrolling loop too
+            if (Date.now() - START_TIME > MAX_RUNTIME_MS) break;
+
             const count = await page.$$eval('a.hfpxzc', els => els.length);
             log.info(`Collected ${count}/${numResults} results...`);
             if (count >= numResults || (count === prevCount && ++stall >= 5)) break;
@@ -93,6 +104,12 @@ async function requestHandler({ request, page, log, crawler }) {
         }
 
         const hrefs = await page.$$eval('a.hfpxzc', (els, max) => els.slice(0, max).map(a => a.href), numResults);
+        
+        if (hrefs.length === 0) {
+            log.warning('⚠️ No results found on Google Maps for this query.');
+            return;
+        }
+
         await crawler.addRequests(hrefs.map(url => ({ url, userData: { label: LABEL_DETAIL } })));
         return;
     }
@@ -101,13 +118,11 @@ async function requestHandler({ request, page, log, crawler }) {
         if (totalSaved >= numResults) return;
 
         await blockMedia(page);
-        // OPTIMIZED: Changed waitUntil to 'commit' to allow manual selective DOM extraction without waiting on full app scripts
         await page.goto(request.url, { waitUntil: 'commit', timeout: 30_000 });
 
         const isBotCheck = await page.evaluate(() => document.title.includes('Before you continue') || !!document.querySelector('form[action*="consent.google.com"]'));
         if (isBotCheck) return;
 
-        // Give basic structural container elements a quick window to load
         await page.waitForSelector('h1', { timeout: 7000 }).catch(() => {});
 
         const raw = await page.evaluate(() => {
@@ -125,7 +140,6 @@ async function requestHandler({ request, page, log, crawler }) {
 
         if (BAD_NAMES.has(raw.name)) return;
 
-        // OPTIMIZED: Removed document.body.innerText fallback which triggers catastrophic CPU reflow stalls
         const phone = raw.phone || 'N/A';
         const emailId = emailFromDomain(raw.website);
 
@@ -153,7 +167,7 @@ async function requestHandler({ request, page, log, crawler }) {
 const crawler = new PlaywrightCrawler({
     proxyConfiguration,
     requestHandler,
-    maxConcurrency: 10, // Safely bumped since resource extraction is lighter now
+    maxConcurrency: 10, // Increased concurrency because memory extraction is optimized
     useSessionPool: true,
     persistCookiesPerSession: true,
     launchContext: {
